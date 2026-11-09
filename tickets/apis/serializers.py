@@ -52,3 +52,26 @@ class TicketModelSerializer(serializers.ModelSerializer):
 
 class TicketStatusFilterInputSerializer(serializers.Serializer):
     status = serializers.CharField(choices=Ticket.status.choices, required=False)
+
+
+class TicketUpdateInputSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ticket
+        fields = [
+            "title",
+            "description",
+            "priority",
+            "related_asset",
+            "tags",
+            "status",
+            "assigned_to",
+        ]
+
+    def validate(self, attrs):
+        user = self.context['request'].user 
+
+        if not is_staff(user) : 
+            if "priority" or "related_asset" or "assigned_to" in attrs : 
+                raise serializers.ValidationError("لا يمكنك تعديل هذه الحقول") 
+
+

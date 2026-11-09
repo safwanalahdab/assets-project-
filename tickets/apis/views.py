@@ -24,7 +24,7 @@ def ticket_list_create_api(request) :
          return Response(serilizer.data, status=status.HTTP_200_OK)
 
 
-    seralizer = TicketCreateInputSerializer(data=request.data) 
+    seralizer = TicketCreateInputSerializer(data=request.data,context={"request": request}) 
     seralizer.is_valid(raise_exception=True) 
     data = seralizer.save(creator=request.user) 
     output = TicketModelSerializer(data,many=False) 
