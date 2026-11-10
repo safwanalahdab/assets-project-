@@ -1,10 +1,10 @@
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
-from models import Ticket ,TicketComment
+from tickets.models import Ticket ,TicketComment
 from .permissions import is_staff
 from rest_framework.response import Response
 from rest_framework import status
-from serializers import (
+from .serializers import (
     TicketCreateInputSerializer,
     TicketStatusFilterInputSerializer,
     TicketModelSerializer,

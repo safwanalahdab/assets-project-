@@ -30,6 +30,7 @@ class TicketCreateInputSerializer(serializers.ModelSerializer):
 
         if asset and not is_staff(user) and user.id != asset.assigned_assets.id:
             raise serializers.ValidationError("الاصل غير مخصص لهذا الشخص ")
+        return attrs
 
 
 class TicketModelSerializer(serializers.ModelSerializer):
@@ -51,7 +52,7 @@ class TicketModelSerializer(serializers.ModelSerializer):
 
 
 class TicketStatusFilterInputSerializer(serializers.Serializer):
-    status = serializers.CharField(choices=Ticket.status.choices, required=False)
+    status = serializers.ChoiceField(choices=Ticket.STATUS_CHOICES, required=False)
 
 
 class TicketUpdateInputSerializer(serializers.ModelSerializer):
