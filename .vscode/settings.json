@@ -1,4 +1,9 @@
 {
     "python-envs.defaultEnvManager": "ms-python.python:system",
-    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe"
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
+
+    "ruff.lint.ignore": ["RUF012"],
+
+    "problems.decorations.enabled": false,
+    "editor.renderValidationDecorations": "off"
 }

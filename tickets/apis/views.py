@@ -1,6 +1,6 @@
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
-from models import Ticket
+from models import Ticket ,TicketComment
 from .permissions import is_staff
 from rest_framework.response import Response
 from rest_framework import status
@@ -9,8 +9,11 @@ from serializers import (
     TicketStatusFilterInputSerializer,
     TicketModelSerializer,
     TicketUpdateInputSerializer,
+    TicketCommentModelSerializer,
+    TicketCommentCreateInputSerializer
 )
 from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import PermissionDenied
 
 
 @api_view(["GET", "POST"])
@@ -42,26 +45,55 @@ def ticket_list_create_api(request):
 @api_view(["GET", "DELETE", "PATCH"])
 @permission_classes([IsAuthenticated])
 def ticket_detail_update_delete_api(request, pk):
+    ticket = get_object_or_404(Ticket, pk=pk)
+    user = request.user
+    if ticket.creator_id != user.id and not is_staff(user):
+        raise PermissionDenied()
+
     if request.method == "PATCH":
-        ticket = get_object_or_404(Ticket, pk=pk)
         serializer = TicketUpdateInputSerializer(
             ticket, data=request.data, partial=True, context={"request": request}
         )
-        serializer.is_valid(raise_exception=True) 
+        serializer.is_valid(raise_exception=True)
         data = serializer.save()
-        output = TicketModelSerializer(data,many=False) 
-        return Response(output.data,status=status.HTTP_200_OK)
+        output = TicketModelSerializer(data, many=False)
+        return Response(output.data, status=status.HTTP_200_OK)
+
+    if request.method == "GET":
+        serializer = TicketModelSerializer(ticket, many=False)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    ticket.delete()
+    return Response({"Message" : "تم الحذف بنجاح"},status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(["GET","POST"]) 
+@permission_classes([IsAuthenticated])
+def ticket_comments_list_create_api(request,pk) : 
+    ticket = get_object_or_404(Ticket,pk=pk)
+    user = request.user
+    if not is_staff(user) and ticket.creator_id != user.id : 
+        raise PermissionDenied()
     
     if request.method == "GET" : 
-        ticket = get_object_or_404(Ticket,pk=pk)
-        serializer = TicketModelSerializer(ticket,many=False)
-        return Response(serializer.data,status=status.HTTP_200_OK)
+        if is_staff(user) : 
+            comments = TicketComment.objects.filter(ticket=ticket) 
+        else : 
+            comments = TicketComment.objects.filter(ticket=ticket,is_internal=False)
+        output = TicketCommentModelSerializer(comments,many=True)
+        return Response(output.data,status=status.HTTP_200_OK)
 
-    ticket = get_object_or_404(Ticket,pk=pk)
-    ticket.delete()
-    return Response(status=status.HTTP_200_OK)
+    context = {
+        "request" : request ,
+        "ticket" : ticket
+    }
+    serializer = TicketCommentCreateInputSerializer(data=request.data,context=context)
+    serializer.is_valid(raise_exception=True) 
+    comment = serializer.save(author=user,ticket=ticket)
+    output = TicketCommentModelSerializer(comment)
+    return Response(output.data,status=status.HTTP_201_CREATED)
+
+ 
 
 
-
-
-    
+        
