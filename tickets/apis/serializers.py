@@ -68,10 +68,26 @@ class TicketUpdateInputSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, attrs):
-        user = self.context['request'].user 
+        user = self.context["request"].user
+        asset = attrs.get("related_asset")
+        assigned_to = attrs.get("assigned_to")
 
-        if not is_staff(user) : 
-            if "priority" or "related_asset" or "assigned_to" in attrs : 
-                raise serializers.ValidationError("لا يمكنك تعديل هذه الحقول") 
+        if ("priority" in attrs or "status" in attrs or "assigned_to" in attrs) and not is_staff(
+            user
+        ):
+            raise serializers.ValidationError("غير مسموح هذه العمليات للمستخدم")
 
+        if self.instance.status == "closed":
+            raise serializers.ValidationError(
+                "this ticket is closed, you are not allowed to update it anymore."
+            )
 
+        if assigned_to and not is_staff(assigned_to):
+            raise serializers.ValidationError("لا يمكنك الاسناد الى غير مسؤول ")
+
+        if asset and not is_staff(user) and asset.assigned_to.id != user.id:
+            raise serializers.ValidationError(
+                {"related_asset": "choose an asset assigned to you"}
+            )
+
+        return attrs 
